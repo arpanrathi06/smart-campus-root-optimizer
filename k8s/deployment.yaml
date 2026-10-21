@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: campus-navigator
-          image: DOCKERHUB_USERNAME/smart-campus-route-optimizer:latest
+          image: arpanrathi/smart-campus-route-optimizer:latest
           imagePullPolicy: Always
           ports:
             - name: http
