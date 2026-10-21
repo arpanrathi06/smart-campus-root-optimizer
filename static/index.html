@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Navigator | Smart Campus Route Optimizer</title>
+<style>
+:root{--bg:#f3f6fb;--ink:#17233d;--muted:#68758d;--brand:#2558d8;--line:#e2e8f2;--card:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,Segoe UI,Arial,sans-serif}
+header{background:linear-gradient(120deg,#14254b,#2459d8);color:white;padding:28px max(22px,calc((100% - 1160px)/2))}
+h1{font-size:clamp(25px,4vw,36px);margin:0 0 6px}.subtitle{margin:0;color:#dce6ff}
+main{max-width:1160px;margin:24px auto;padding:0 18px 40px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.stat,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 5px 18px #19345a08}
+.stat{padding:17px 20px}.stat strong{display:block;font-size:25px}.stat span{color:var(--muted);font-size:13px}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{padding:22px;margin-bottom:18px}
+h2{font-size:18px;margin:0 0 7px}.hint{color:var(--muted);font-size:13px;margin:0 0 18px;line-height:1.5}
+label{display:block;font-weight:650;font-size:13px;margin:12px 0 7px}select{width:100%;padding:12px;border:1px solid #d4dceb;border-radius:10px;background:white;color:var(--ink);font-size:14px}
+button{border:0;border-radius:10px;background:var(--brand);color:white;padding:12px 16px;font-weight:700;cursor:pointer;margin-top:15px}
+button.secondary{background:#eaf0ff;color:#244cba}.result{background:#f6f9ff;border:1px solid #e1eaff;border-radius:14px;padding:15px;margin-top:16px;min-height:82px}
+.distance{font-size:29px;font-weight:800;color:var(--brand)}.unit{font-size:13px;color:var(--muted)}
+.route{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:12px}.stop{background:white;border:1px solid #dbe4f5;border-radius:9px;padding:8px 10px;font-size:12px;font-weight:650}.arrow{color:var(--brand);font-weight:800}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.tab{background:#eef2f8;color:#4a5872;margin:0;padding:9px 12px}.tab.active{background:#dfe8ff;color:#1c49b5}
+.scroll{overflow:auto;max-height:350px}table{border-collapse:collapse;width:100%;font-size:12px}td,th{text-align:left;padding:9px;border-bottom:1px solid var(--line);white-space:nowrap}th{background:#f6f8fc;position:sticky;top:0}
+.building-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}.building{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px}.building b{color:var(--brand);margin-right:6px}
+.notice,footer{color:var(--muted);font-size:12px;text-align:center;padding:16px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.stats{gap:8px}.stat{padding:13px}.stat strong{font-size:21px}.card{padding:17px}.building-list{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header><h1>⌁ Campus Navigator</h1><p class="subtitle">Smart Campus Route Optimizer · MIT-WPU campus graph</p></header>
+<main>
+<section class="stats"><div class="stat"><strong>16</strong><span>Campus locations</span></div><div class="stat"><strong>22</strong><span>Road connections</span></div><div class="stat"><strong>Dijkstra</strong><span>Shortest-path algorithm</span></div></section>
+<div class="layout"><div>
+<section class="card"><h2>Find the shortest route</h2><p class="hint">Choose two locations to calculate the shortest path.</p>
+<label for="source">Starting location</label><select id="source"></select><label for="destination">Destination</label><select id="destination"></select>
+<button id="find">Calculate route →</button><div class="result" id="routeResult" aria-live="polite">Select locations and calculate a route.</div></section>
+<section class="card"><h2>Minimum Spanning Tree</h2><p class="hint">Prim's algorithm selects connections that join the graph at minimum total distance.</p>
+<button class="secondary" id="mstButton">Show MST connections</button><div class="result" id="mstResult">MST details will appear here.</div></section>
+</div><div>
+<section class="card"><h2>Campus locations</h2><p class="hint">Index numbers match the original C++ program.</p><div class="building-list" id="buildingList"></div></section>
+<section class="card"><h2>Graph explorer</h2><p class="hint">Explore the graph connections and distances.</p><div class="tabs"><button class="tab active" data-tab="adj">Adjacency list</button><button class="tab" data-tab="matrix">Adjacency matrix</button></div><div class="scroll" id="graphData">Loading graph data…</div></section>
+</div></div><p class="notice">Distances are estimates from the project graph, not live walking directions.</p>
+</main><footer>Smart Campus Route Optimizer · Campus graph algorithms in a web interface</footer>
+<script>
+const $=id=>document.getElementById(id);let buildings=[];
+async function api(path){const r=await fetch(path);const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}
+function fill(){for(const id of ['source','destination']){ $(id).innerHTML='';buildings.forEach(b=>{let o=document.createElement('option');o.value=b.index;o.textContent=`[${b.index}] ${b.name}`;$(id).appendChild(o)})}
+$('source').value='0';$('destination').value='15';$('buildingList').innerHTML=buildings.map(b=>`<div class="building"><b>[${b.index}]</b>${b.name}</div>`).join('')}
+async function route(){let box=$('routeResult');box.textContent='Calculating…';try{let r=await api(`/api/shortest-path?source=${$('source').value}&destination=${$('destination').value}`);box.innerHTML=`<div class="distance">${r.distance} <span class="unit">metres</span></div><div class="unit">Shortest route · ${r.path.length} locations</div><div class="route">${r.path.map((n,i)=>`${i?'<span class="arrow">→</span>':''}<span class="stop">${n}</span>`).join('')}</div>`}catch(e){box.textContent=e.message}}
+async function mst(){let box=$('mstResult');box.textContent='Calculating…';try{let r=await api('/api/mst');box.innerHTML=`<div class="distance">${r.total_distance} <span class="unit">metres total</span></div><p class="hint">${r.edges.length} selected connections.</p><div class="scroll"><table><thead><tr><th>Connection</th><th>Distance</th></tr></thead><tbody>${r.edges.map(e=>`<tr><td>${e.from_name} — ${e.to_name}</td><td>${e.distance} m</td></tr>`).join('')}</tbody></table></div>`}catch(e){box.textContent=e.message}}
+async function adjacency(){let rows=await api('/api/adjacency');$('graphData').innerHTML=`<table><thead><tr><th>Building</th><th>Connections (distance)</th></tr></thead><tbody>${rows.map(r=>`<tr><td>[${r.index}] ${r.name}</td><td>${r.neighbors.map(n=>`${n.name} (${n.distance} m)`).join('<br>')}</td></tr>`).join('')}</tbody></table>`}
+async function matrix(){let d=await api('/api/matrix');$('graphData').innerHTML=`<table><thead><tr><th>Building</th>${d.buildings.map((_,i)=>`<th>${i}</th>`).join('')}</tr></thead><tbody>${d.matrix.map((row,i)=>`<tr><th>${i}. ${d.buildings[i]}</th>${row.map(v=>`<td>${v===null?'—':v}</td>`).join('')}</tr>`).join('')}</tbody></table>`}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',async()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));try{await(b.dataset.tab==='adj'?adjacency():matrix())}catch(e){$('graphData').textContent=e.message}}));
+$('find').addEventListener('click',route);$('mstButton').addEventListener('click',mst);
+(async()=>{try{buildings=await api('/api/buildings');fill();await adjacency()}catch(e){$('graphData').textContent='Could not load API: '+e.message}})();
+</script></body></html>
