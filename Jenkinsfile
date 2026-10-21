@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        IMAGE_NAME = 'DOCKERHUB_USERNAME/smart-campus-route-optimizer'
+        IMAGE_NAME = 'arpanrathi/smart-campus-route-optimizer'
     }
     stages {
         stage('Checkout') {
