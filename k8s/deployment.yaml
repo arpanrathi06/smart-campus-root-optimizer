@@ -14,9 +14,11 @@ spec:
       labels:
         app: campus-navigator
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: campus-navigator
-          image: arpanrathi/smart-campus-route-optimizer:latest
+          image: 404571418135.dkr.ecr.ap-south-1.amazonaws.com/smart-campus-route-optimizer:latest
           imagePullPolicy: Always
           ports:
             - name: http
